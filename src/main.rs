@@ -83,7 +83,7 @@ fn create_response(command: Command, db: &Db) -> Result<Frame> {
     // get access to the db and lock it for other tasks
     let mut db = match db.lock() {
         Ok(db) => db,
-        Err(e) => {
+        Err(_) => {
             return Err(anyhow::Error::msg("something went wrong while locking db"));
         }
     };
@@ -103,7 +103,7 @@ fn create_response(command: Command, db: &Db) -> Result<Frame> {
                 Ok(Frame::Null)
             }
         },
-        cmd => {
+        _ => {
             Err(anyhow::Error::msg("command not found"))
         }
     }
