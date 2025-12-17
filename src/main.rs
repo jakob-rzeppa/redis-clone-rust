@@ -1,12 +1,18 @@
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use anyhow::Result;
 use tokio::net::{TcpListener, TcpStream};
 use mini_redis::{Command, Connection, Frame};
+use bytes::Bytes;
+
+type Db = Arc<Mutex<HashMap<String, Bytes>>>;
 
 #[tokio::main]
 async fn main() {
     // panics if bind fails
     let listener = TcpListener::bind("127.0.0.1:6379").await.expect("bind failed");
+
+    let db: Db = Arc::new(Mutex::new(HashMap::new()));
 
     loop {
         // accept connections and pass TcpStream to handle_connection
@@ -18,21 +24,15 @@ async fn main() {
             }
         };
 
-        // A new task is spawned for each inbound socket. The socket is
-        // moved to the new task and processed there.
+        // the db needs to be cloned before spawning the task so the task won't take ownership of the db
+        let db = db.clone();
         tokio::spawn(async move {
-            // The move keyword moves the used variables (socket) to the task.
-            handle_connection(socket).await;
+            handle_connection(socket, db).await;
         });
     }
 }
 
-async fn handle_connection(socket: TcpStream) {
-    use std::collections::HashMap;
-
-    // store data in hashmap
-    let mut db: HashMap<String, Vec<u8>> = HashMap::new();
-
+async fn handle_connection(socket: TcpStream, db: Db) {
     // The `Connection` lets us read/write redis **frames** instead of
     // byte streams. The `Connection` type is defined by mini-redis.
     let mut connection = Connection::new(socket);
@@ -51,7 +51,7 @@ async fn handle_connection(socket: TcpStream) {
                     }
                 };
 
-                let response_frame = create_response(command, &mut db).await.unwrap_or_else(|e| {
+                let response_frame = create_response(command, &db).unwrap_or_else(|e| {
                     Frame::Error(e.to_string())
                 });
 
@@ -77,12 +77,20 @@ async fn handle_connection(socket: TcpStream) {
     }
 }
 
-async fn create_response(command: Command, db: &mut HashMap<String, Vec<u8>>) -> Result<Frame> {
+fn create_response(command: Command, db: &Db) -> Result<Frame> {
     use mini_redis::Command::{Get, Set};
+
+    // get access to the db and lock it for other tasks
+    let mut db = match db.lock() {
+        Ok(db) => db,
+        Err(e) => {
+            return Err(anyhow::Error::msg("something went wrong while locking db"));
+        }
+    };
 
     match command {
         Set(cmd) => {
-            db.insert(cmd.key().to_string(), cmd.value().to_vec());
+            db.insert(cmd.key().to_string(), cmd.value().clone());
             Ok(Frame::Simple("OK".to_string()))
         },
         Get(cmd) => {
