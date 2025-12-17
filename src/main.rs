@@ -16,7 +16,12 @@ async fn main() {
             }
         };
 
-        handle_connection(socket).await;
+        // A new task is spawned for each inbound socket. The socket is
+        // moved to the new task and processed there.
+        tokio::spawn(async move {
+            // The move keyword moves the used variables (socket) to the task.
+            handle_connection(socket).await;
+        });
     }
 }
 
