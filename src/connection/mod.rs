@@ -3,7 +3,6 @@ mod header;
 mod content;
 
 use tokio::net::{TcpListener};
-use tokio::io::{AsyncReadExt, BufReader};
 
 use header::{read_header, HeaderData};
 use crate::connection::content::read_content;
@@ -26,7 +25,7 @@ enum Command {
 pub async fn listen_for_connections(tcp_listener: TcpListener) {
     loop {
         // accept connections and pass TcpStream to handle_connection
-        let (stream, _) = match tcp_listener.accept().await {
+        let (mut stream, _) = match tcp_listener.accept().await {
             Ok(res) => res,
             Err(e) => {
                 eprintln!("accept failed: {}", e);
@@ -35,11 +34,8 @@ pub async fn listen_for_connections(tcp_listener: TcpListener) {
         };
 
         tokio::spawn(async move {
-            // Wrap the stream in a BufReader, so we can use the BufRead methods
-            let mut reader = BufReader::new(stream);
-
             loop {
-                let header_data = match read_header(&mut reader).await {
+                let header_data = match read_header(&mut stream).await {
                     Ok(header_data) => header_data,
                     Err(e) => {
                         eprintln!("read header failed: {}", e);
@@ -57,7 +53,7 @@ pub async fn listen_for_connections(tcp_listener: TcpListener) {
                     }
                     HeaderData::Set { id, content_length } => {
                         // the request content still needs to be read
-                        let content: Vec<u8> = match read_content(&mut reader, content_length as usize).await {
+                        let content: Vec<u8> = match read_content(&mut stream, content_length as usize).await {
                             Ok(content) => content,
                             Err(e) => {
                                 eprintln!("read set content failed: {}", e);
@@ -70,7 +66,7 @@ pub async fn listen_for_connections(tcp_listener: TcpListener) {
                     },
                     HeaderData::Insert { content_length }  => {
                         // the request content still needs to be read
-                        let content: Vec<u8> = match read_content(&mut reader, content_length as usize).await {
+                        let content: Vec<u8> = match read_content(&mut stream, content_length as usize).await {
                             Ok(content) => content,
                             Err(e) => {
                                 eprintln!("read insert content failed: {}", e);
