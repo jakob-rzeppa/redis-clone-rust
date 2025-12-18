@@ -5,10 +5,20 @@ pub(super) async fn read_content<S>(stream: &mut S, content_length: usize) -> Re
 where
     S: AsyncRead + Unpin,
 {
-    let mut content = Vec::with_capacity(content_length);
+    let mut content = vec![0; content_length];
 
     stream.read_exact(&mut content).await
         .context("read content failed")?;
 
     Ok(content)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_read_content() {
+
+    }
 }
