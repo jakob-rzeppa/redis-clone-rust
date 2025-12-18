@@ -25,12 +25,28 @@ The intentions behind the project are:
 
 ### Requests v1
 
-The connection should be a tcp stream
+The connection should be a tcp stream in big-endian format
 
-- first byte metadata (like version of the request (to add to the request later))
+- first byte metadata (version of the request and command (GET, SET, INSERT, REMOVE))
+
+#### GET
+
+- 2-5 u32 id
+
+#### SET
+
 - 2-5 u32 id
 - 6-7 u16 length
 - rest data
+
+#### INSERT
+
+- 2-3 u16 length
+- rest data
+
+#### REMOVE
+
+- 2-5 u32 id
 
 ### Response v1
 
