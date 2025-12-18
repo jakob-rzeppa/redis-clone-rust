@@ -9,5 +9,3 @@ anyhow = "1.0.100" # For error context and propagation
 mockall = "0.14.0" # mocking
 
 tokio = { version = "1", features = ["full"] }
-mini-redis = "0.4"
-bytes = "1" # byte array structure used by mini-redis with functionality similar to Arc<Vec<u8>>
