@@ -3,6 +3,7 @@ use tokio::io::{AsyncReadExt};
 use crate::connection::Command;
 use crate::connection::metadata::extract_metadata;
 
+#[derive(Debug, PartialEq)]
 pub(super) enum HeaderData {
     Get { id: u32 },
     Set { id: u32, content_length: u16 },
@@ -55,5 +56,133 @@ where
 
             Ok(HeaderData::Remove { id })
         }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+
+    #[tokio::test]
+    async fn test_get() {
+        let data = [0b0001_0000,
+            /* id 9 in u32 */ 0x00, 0x00, 0x00, 0x09];
+        let mut cursor = Cursor::new(data);
+
+        let result = read_header(&mut cursor).await.unwrap();
+        assert_eq!(result, HeaderData::Get { id: 0x09 });
+    }
+
+    #[tokio::test]
+    async fn test_get_invalid() {
+        let data = [0b0001_0000,
+            /* id 0 in u32 (one byte missing) */ 0x00, 0x00, 0x00];
+        let mut cursor = Cursor::new(data);
+
+        let err = read_header(&mut cursor).await.unwrap_err();
+        assert!(err.to_string().contains("read id failed"));
+    }
+
+    #[tokio::test]
+    async fn test_set() {
+        let data = [0b0001_0001,
+            /* id 9 in u32 */ 0x00, 0x00, 0x00, 0x09,
+            /* content_length 30 in u16 */ 0x00, 30];
+        let mut cursor = Cursor::new(data);
+
+        let result = read_header(&mut cursor).await.unwrap();
+        assert_eq!(result, HeaderData::Set { id: 0x09, content_length: 30 });
+    }
+
+    #[tokio::test]
+    async fn test_set_invalid_content_length() {
+        let data = [0b0001_0001,
+            /* id 9 in u32 */ 0x00, 0x00, 0x00, 0x09,
+            /* content_length 30 in u16 (one byte missing) */ 0x00];
+        let mut cursor = Cursor::new(data);
+
+        let err = read_header(&mut cursor).await.unwrap_err();
+        assert!(err.to_string().contains("read content_length failed"));
+    }
+
+    #[tokio::test]
+    async fn test_set_invalid_id() {
+        let data = [0b0001_0001,
+            /* id 9 in u32 (one byte missing) */ 0x00, 0x00, 0x00
+            /* content_length missing */];
+        let mut cursor = Cursor::new(data);
+
+        let err = read_header(&mut cursor).await.unwrap_err();
+        assert!(err.to_string().contains("read id failed"));
+    }
+
+    #[tokio::test]
+    async fn test_insert() {
+        let data = [0b0001_0010,
+            /* content_length 30 in u16 */ 0x00, 30];
+        let mut cursor = Cursor::new(data);
+
+        let result = read_header(&mut cursor).await.unwrap();
+        assert_eq!(result, HeaderData::Insert { content_length: 30 });
+    }
+
+    #[tokio::test]
+    async fn test_insert_invalid() {
+        let data = [0b0001_0010,
+            /* content_length 30 in u16 (missing one byte) */ 0x00];
+        let mut cursor = Cursor::new(data);
+
+        let err = read_header(&mut cursor).await.unwrap_err();
+        assert!(err.to_string().contains("read content_length failed"));
+    }
+
+    #[tokio::test]
+    async fn test_remove() {
+        let data = [0b0001_0011,
+            /* id 9 in u32 */ 0x00, 0x00, 0x00, 0x09];
+        let mut cursor = Cursor::new(data);
+
+        let result = read_header(&mut cursor).await.unwrap();
+        assert_eq!(result, HeaderData::Remove { id: 9 });
+    }
+
+    #[tokio::test]
+    async fn test_remove_invalid() {
+        let data = [0b0001_0011,
+            /* id 9 in u32 (missing three byte) */ 0x00];
+        let mut cursor = Cursor::new(data);
+
+        let err = read_header(&mut cursor).await.unwrap_err();
+        assert!(err.to_string().contains("read id failed"));
+    }
+
+    #[tokio::test]
+    async fn test_empty() {
+        let data = [];
+        let mut cursor = Cursor::new(data);
+
+        let err = read_header(&mut cursor).await.unwrap_err();
+        assert!(err.to_string().contains("read metadata failed"));
+    }
+
+    #[tokio::test]
+    async fn test_invalid_version() {
+        let data = [0b0011_0000,
+            /* id 9 in u32 */ 0x00, 0x00, 0x00, 0x09];
+        let mut cursor = Cursor::new(data);
+
+        let err = read_header(&mut cursor).await.unwrap_err();
+        assert!(err.to_string().contains("wrong version"));
+    }
+
+    #[tokio::test]
+    async fn test_invalid_command() {
+        let data = [0b0001_1000]; // invalid command
+        let mut cursor = Cursor::new(data);
+
+        let err = read_header(&mut cursor).await.unwrap_err();
+        assert!(err.to_string().contains("parse metadata failed"));
     }
 }
