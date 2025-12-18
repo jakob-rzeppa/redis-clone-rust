@@ -5,7 +5,7 @@ use super::Command;
 /// The metadata is one byte in the form:
 /// first 4 bits: version as u4
 /// and the left over 4 bits: command as u4
-pub(super) fn extract_metadata(metadata: u8) -> Result<(u8, Command), anyhow::Error> {
+pub(super) fn extract_metadata(metadata: &u8) -> Result<(u8, Command), anyhow::Error> {
     let version = metadata >> 4; // example 0b0001_0000 (v1) -> 0b0000_0001 == 1
 
     // only look at the last 4 bits
@@ -27,7 +27,7 @@ mod tests {
     #[test]
     fn extract_metadata_get() {
         let metadata = 0b0001_0000;
-        let (version, command) = extract_metadata(metadata).unwrap();
+        let (version, command) = extract_metadata(&metadata).unwrap();
         assert_eq!(version, 1);
         assert_eq!(command, Command::Get);
     }
@@ -35,7 +35,7 @@ mod tests {
     #[test]
     fn extract_metadata_set() {
         let metadata = 0b0001_0001;
-        let (version, command) = extract_metadata(metadata).unwrap();
+        let (version, command) = extract_metadata(&metadata).unwrap();
         assert_eq!(version, 1);
         assert_eq!(command, Command::Set);
     }
@@ -43,7 +43,7 @@ mod tests {
     #[test]
     fn extract_metadata_insert() {
         let metadata = 0b0001_0010;
-        let (version, command) = extract_metadata(metadata).unwrap();
+        let (version, command) = extract_metadata(&metadata).unwrap();
         assert_eq!(version, 1);
         assert_eq!(command, Command::Insert);
     }
@@ -51,7 +51,7 @@ mod tests {
     #[test]
     fn extract_metadata_remove() {
         let metadata = 0b0001_0011;
-        let (version, command) = extract_metadata(metadata).unwrap();
+        let (version, command) = extract_metadata(&metadata).unwrap();
         assert_eq!(version, 1);
         assert_eq!(command, Command::Remove);
     }
@@ -59,7 +59,7 @@ mod tests {
     #[test]
     fn extract_metadata_unknown_command() {
         let metadata = 0b0001_1111;
-        let res = extract_metadata(metadata);
+        let res = extract_metadata(&metadata);
         assert!(res.is_err());
         assert_eq!(res.err().unwrap().to_string(), "unknown command 15");
     }
