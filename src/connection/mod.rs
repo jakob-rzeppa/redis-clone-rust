@@ -6,8 +6,9 @@ use tokio::net::{TcpListener};
 
 use header::{read_header, HeaderData};
 use crate::connection::content::read_content;
+use crate::controller::route_request;
 
-enum Request<'a> {
+pub(crate) enum Request<'a> {
     Get { id: u32 },
     Set { id: u32, content: &'a [u8] },
     Insert { content: &'a [u8] },
@@ -79,7 +80,7 @@ pub async fn listen_for_connections(tcp_listener: TcpListener) {
                     }
                 };
 
-                // TODO handle the request
+                route_request(request).await;
             }
         });
     }
