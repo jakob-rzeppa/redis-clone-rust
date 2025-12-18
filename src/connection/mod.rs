@@ -15,14 +15,6 @@ pub(crate) enum Request<'a> {
     Remove { id: u32 },
 }
 
-#[derive(Debug, PartialEq)]
-enum Command {
-    Get,
-    Set,
-    Insert,
-    Remove
-}
-
 pub async fn listen_for_connections(tcp_listener: TcpListener) {
     loop {
         // accept connections and pass TcpStream to handle_connection

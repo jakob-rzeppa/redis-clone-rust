@@ -1,4 +1,10 @@
-use super::Command;
+#[derive(Debug, PartialEq)]
+pub(super) enum Command {
+    Get,
+    Set,
+    Insert,
+    Remove
+}
 
 /// Extract the metadata of a request
 ///

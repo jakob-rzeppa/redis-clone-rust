@@ -1,6 +1,6 @@
 use anyhow::Context;
 use tokio::io::{AsyncReadExt};
-use crate::connection::Command;
+use crate::connection::metadata::Command;
 use crate::connection::metadata::extract_metadata;
 
 #[derive(Debug, PartialEq)]
