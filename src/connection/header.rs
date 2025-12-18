@@ -1,6 +1,5 @@
 use anyhow::Context;
-use tokio::io::{AsyncReadExt, BufReader};
-use tokio::net::TcpStream;
+use tokio::io::{AsyncReadExt};
 use crate::connection::Command;
 use crate::connection::metadata::extract_metadata;
 
@@ -11,9 +10,12 @@ pub(super) enum HeaderData {
     Remove { id: u32 },
 }
 
-pub(super) async fn read_header(reader: &mut BufReader<TcpStream>) -> Result<HeaderData, anyhow::Error> {
-    // get metadata from the reader
-    let metadata = reader.read_u8().await
+pub(super) async fn read_header<S>(stream: &mut S) -> Result<HeaderData, anyhow::Error>
+where
+    S: AsyncReadExt + Unpin,
+{
+    // get metadata from the stream
+    let metadata = stream.read_u8().await
         .context("read metadata failed")?;
 
     // extract the version and command from the metadata
@@ -28,27 +30,27 @@ pub(super) async fn read_header(reader: &mut BufReader<TcpStream>) -> Result<Hea
     // extract metadata for each command
     match command {
         Command::Get => {
-            let id = reader.read_u32().await
+            let id = stream.read_u32().await
                 .context("read id failed")?;
 
             Ok(HeaderData::Get { id })
         }
         Command::Set => {
-            let id = reader.read_u32().await
+            let id = stream.read_u32().await
                 .context("read id failed")?;
-            let content_length = reader.read_u16().await
+            let content_length = stream.read_u16().await
                 .context("read content_length failed")?;
 
             Ok(HeaderData::Set { id, content_length })
         }
         Command::Insert => {
-            let content_length = reader.read_u16().await
+            let content_length = stream.read_u16().await
                 .context("read content_length failed")?;
 
             Ok(HeaderData::Insert { content_length })
         }
         Command::Remove => {
-            let id = reader.read_u32().await
+            let id = stream.read_u32().await
                 .context("read id failed")?;
 
             Ok(HeaderData::Remove { id })
