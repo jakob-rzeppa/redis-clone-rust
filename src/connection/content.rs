@@ -1,11 +1,13 @@
 use anyhow::Context;
-use tokio::io::{AsyncReadExt, BufReader};
-use tokio::net::TcpStream;
+use tokio::io::{AsyncRead, AsyncReadExt};
 
-pub(super) async fn read_content(reader: &mut BufReader<TcpStream>, content_length: usize) -> Result<Vec<u8>, anyhow::Error> {
+pub(super) async fn read_content<S>(stream: &mut S, content_length: usize) -> Result<Vec<u8>, anyhow::Error>
+where
+    S: AsyncRead + Unpin,
+{
     let mut content = Vec::with_capacity(content_length);
 
-    reader.read_exact(&mut content).await
+    stream.read_exact(&mut content).await
         .context("read content failed")?;
 
     Ok(content)
