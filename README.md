@@ -23,40 +23,44 @@ The intentions behind the project are:
 - A connection spawns a tokio task
 - One writer / multiple readers -> the value that shall be updated can't be read during the operation, but other values are able to be read while a different value is updated
 
-### Requests v1
+### Requests
 
-The connection should be a tcp stream in big-endian format
-
-- 0th byte metadata (version of the request and command (GET, SET, INSERT, REMOVE))
+- u8 version
+- u8 command (GET, SET, INSERT, REMOVE)
+- u16 content length
+- content of specified length
 
 #### GET
 
-- 1-4 u32 id
+- u32 id
 
 #### SET
 
-- 1-4 u32 id
-- 5-6 u16 length
-- rest data
+- u32 id
+- content
 
 #### INSERT
 
-- 1-2 u16 length
-- rest data
+- content
 
 #### REMOVE
 
-- 1-4 u32 id
+- u32 id
 
-### Response v1
+### Response
 
-> the response version is the same as the request one, so no need for metadata
+the same metadata as the request
+
+- u8 version
+- u8 command
+- u16 status code
+- u16 content length
+- content of specified length
 
 #### Insert
 
-u32 id
+- u32 id
 
 #### Get
 
-- u16 length
-- rest data
+- content
