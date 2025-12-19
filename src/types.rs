@@ -27,6 +27,7 @@ pub(crate) struct Response<'a> {
 }
 
 // u8 in request / response
+#[derive(Debug, PartialEq)]
 pub(crate) enum Command {
     Get = 0,
     Set = 1,
@@ -37,6 +38,20 @@ pub(crate) enum Command {
 impl Into<u8> for Command {
     fn into(self) -> u8 {
         self as u8
+    }
+}
+
+impl TryFrom<u8> for Command {
+    type Error = anyhow::Error;
+
+    fn try_from(i: u8) -> Result<Self, Self::Error> {
+        match i {
+            0 => Ok(Command::Get),
+            1 => Ok(Command::Set),
+            2 => Ok(Command::Insert),
+            3 => Ok(Command::Remove),
+            _ => Err(anyhow::anyhow!("invalid command")),
+        }
     }
 }
 
