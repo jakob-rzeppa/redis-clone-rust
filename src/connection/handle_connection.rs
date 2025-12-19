@@ -1,10 +1,12 @@
-use tokio::net::TcpStream;
 use crate::connection::read_content::read_content;
 use crate::connection::read_header::read_header;
 use crate::controller::route_request;
 use crate::types::{Command, Request};
 
-pub(super) async fn handle_connection(mut stream: TcpStream) {
+pub(super) async fn handle_connection<S>(mut stream: S)
+where
+    S: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin,
+{
     loop {
         // read header
         let header_data = match read_header(&mut stream).await {
