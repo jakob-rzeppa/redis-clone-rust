@@ -27,7 +27,7 @@ pub(crate) struct Response {
 }
 
 // u8 in request / response
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub(crate) enum Command {
     Get = 0,
     Set = 1,
