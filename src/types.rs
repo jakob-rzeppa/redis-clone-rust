@@ -4,11 +4,11 @@
 /// u8 command
 /// u16 content length
 /// content of specified length
-pub(crate) struct Request<'a> {
+pub(crate) struct Request {
     pub(crate) version: u8,
     pub(crate) command: Command,
     pub(crate) content_length: u16,
-    pub(crate) content: &'a [u8],
+    pub(crate) content: Option<Vec<u8>>,
 }
 
 /// Example Response Structure
@@ -18,12 +18,12 @@ pub(crate) struct Request<'a> {
 /// u16 status code
 /// u16 content length
 /// content of specified length
-pub(crate) struct Response<'a> {
+pub(crate) struct Response {
     pub(crate) version: u8,
     pub(crate) command: Command,
     pub(crate) status_code: StatusCode,
     pub(crate) content_length: u16,
-    pub(crate) content: &'a [u8],
+    pub(crate) content: Option<Vec<u8>>,
 }
 
 // u8 in request / response
