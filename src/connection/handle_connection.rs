@@ -1,7 +1,8 @@
 use crate::connection::read_content::read_content;
 use crate::connection::read_header::read_header;
+use crate::connection::send_response::send_response;
 use crate::controller::route_request;
-use crate::types::{Command, Request};
+use crate::types::{Command, Request, Response, StatusCode};
 
 pub(super) async fn handle_connection<S>(mut stream: S)
 where
@@ -13,8 +14,10 @@ where
             Ok(header_data) => header_data,
             Err(e) => {
                 eprintln!("read header failed: {}", e);
-                println!("close connection");
-                return;
+                // don't return a response and let the client reconnect with a new connection
+
+                // break / close connection to make sure that there are no leftover bytes in the stream from this request
+                break;
             }
         };
 
@@ -25,8 +28,18 @@ where
                 Ok(v) => Some(v),
                 Err(e) => {
                     eprintln!("read content failed: {}", e);
-                    println!("close connection");
-                    return;
+                    if let Err(e) = send_response(Response {
+                        version: header_data.version,
+                        command: header_data.command,
+                        status_code: StatusCode::InvalidRequest,
+                        content_length: 0,
+                        content: None,
+                    }, &mut stream).await {
+                        eprintln!("sending response failed: {}", e);
+                        continue; // skip to wait for next request
+                    };
+                    // break / close connection to make sure that there are no leftover bytes in the stream from this request
+                    break;
                 }
             };
         } else {
@@ -43,6 +56,31 @@ where
             },
         };
 
-        route_request(request).await;
+        let response = match route_request(request).await {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("handling request failed: {}", e);
+                if let Err(e) = send_response(Response {
+                    version: header_data.version,
+                    command: header_data.command,
+                    status_code: StatusCode::InternalServerError, // for now just return 500
+                    content_length: 0,
+                    content: None,
+                }, &mut stream).await {
+                    eprintln!("sending response failed: {}", e);
+                    continue; // skip to wait for next request
+                };
+                continue; // skip to wait for next request
+            }
+        };
+
+        match send_response(response, &mut stream).await {
+            Ok(_) => {}
+            Err(e) => {
+                eprintln!("sending response failed: {}", e);
+                continue; // skip to wait for next request
+            }
+        };
     }
+    println!("close connection");
 }
