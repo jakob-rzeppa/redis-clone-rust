@@ -33,6 +33,7 @@ pub(crate) enum Command {
     Set = 1,
     Insert = 2,
     Remove = 3,
+    Invalid = 0xFF // the invalid command is given to the router if the command doesn't exist
 }
 
 impl Into<u8> for Command {
@@ -41,16 +42,14 @@ impl Into<u8> for Command {
     }
 }
 
-impl TryFrom<u8> for Command {
-    type Error = anyhow::Error;
-
-    fn try_from(i: u8) -> Result<Self, Self::Error> {
+impl From<u8> for Command {
+    fn from(i: u8) -> Self {
         match i {
-            0 => Ok(Command::Get),
-            1 => Ok(Command::Set),
-            2 => Ok(Command::Insert),
-            3 => Ok(Command::Remove),
-            _ => Err(anyhow::anyhow!("invalid command")),
+            0 => Command::Get,
+            1 => Command::Set,
+            2 => Command::Insert,
+            3 => Command::Remove,
+            _ => Command::Invalid,
         }
     }
 }

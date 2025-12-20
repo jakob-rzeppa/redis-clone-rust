@@ -19,8 +19,7 @@ where
         .context("header too short")?;
 
     let version = header[0];
-    let command = header[1].try_into()
-        .context("invalid command")?;
+    let command = header[1].into();
     let content_length = u16::from_be_bytes([header[2], header[3]]);
 
     Ok(HeaderData {
@@ -72,7 +71,7 @@ mod tests {
             /* content_length 255 */ 0x00, 0xFF];
         let mut cursor = Cursor::new(data);
 
-        let err = read_header(&mut cursor).await.unwrap_err();
-        assert!(err.to_string().contains("invalid command"));
+        let result = read_header(&mut cursor).await.unwrap();
+        assert_eq!(Command::Invalid, result.command);
     }
 }
