@@ -13,18 +13,15 @@ pub(super) async fn read_header<R>(reader: &mut R) -> Result<HeaderData, anyhow:
 where
     R: AsyncReadExt + Unpin,
 {
-    // u8 version
-    let version = reader.read_u8().await
-        .context("failed to read version")?;
+    // u8 version + u8 command + u16 content length
+    let mut header = [0u8; 4];
+    reader.read_exact(&mut header).await
+        .context("header too short")?;
 
-    // u8 command (GET, SET, INSERT, REMOVE)
-    let command: Command = reader
-        .read_u8().await.context("failed to read command")?
-        .try_into().context("failed to read command")?;
-
-    // u16 content length
-    let content_length = reader.read_u16().await
-        .context("failed to read content_length")?;
+    let version = header[0];
+    let command = header[1].try_into()
+        .context("invalid command")?;
+    let content_length = u16::from_be_bytes([header[2], header[3]]);
 
     Ok(HeaderData {
         version,
@@ -56,7 +53,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_read_header_with_missing_byte_content_length() {
+    async fn test_read_header_too_short() {
         let data = [
             /* version 1 */ 0x01,
             /* command get */ 0x00,
@@ -64,7 +61,7 @@ mod tests {
         let mut cursor = Cursor::new(data);
 
         let err = read_header(&mut cursor).await.unwrap_err();
-        assert!(err.to_string().contains("failed to read content_length"));
+        assert!(err.to_string().contains("header too short"));
     }
 
     #[tokio::test]
@@ -76,26 +73,6 @@ mod tests {
         let mut cursor = Cursor::new(data);
 
         let err = read_header(&mut cursor).await.unwrap_err();
-        assert!(err.to_string().contains("failed to read command"));
-    }
-
-    #[tokio::test]
-    async fn test_read_header_with_missing_command() {
-        let data = [
-            /* version 1 */ 0x01
-            /* missing command */];
-        let mut cursor = Cursor::new(data);
-
-        let err = read_header(&mut cursor).await.unwrap_err();
-        assert!(err.to_string().contains("failed to read command"));
-    }
-
-    #[tokio::test]
-    async fn test_read_header_with_missing_version() {
-        let data = [];
-        let mut cursor = Cursor::new(data);
-
-        let err = read_header(&mut cursor).await.unwrap_err();
-        assert!(err.to_string().contains("failed to read version"));
+        assert!(err.to_string().contains("invalid command"));
     }
 }
