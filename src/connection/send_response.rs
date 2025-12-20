@@ -20,6 +20,9 @@ where
             .context("failed to send content")?;
     }
 
+    writer.write_u8(0x04).await
+        .context("failed to send eot character")?;
+
     Ok(())
 }
 
@@ -56,6 +59,7 @@ mod tests {
             0, 200,            // status_code (u16, big-endian)
             0, 5,              // content_length (u16)
             b'h', b'e', b'l', b'l', b'o',
+            4 // eot
         ];
 
         assert_eq!(written, expected);
@@ -85,6 +89,7 @@ mod tests {
             0,                // command
             0, 200,            // status_code (u16, big-endian)
             0, 0,              // content_length (u16)
+            4 // eot
         ];
 
         assert_eq!(written, expected);

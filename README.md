@@ -29,6 +29,7 @@ The intentions behind the project are:
 - u8 command (GET, SET, INSERT, REMOVE)
 - u16 content length
 - content of specified length
+- EOT (End of Transmission) ASCII control character 00000100 (4)
 
 #### GET
 
@@ -56,6 +57,7 @@ the same metadata as the request
 - u16 status code
 - u16 content length
 - content of specified length
+- EOT (End of Transmission) ASCII control character 00000100 (4)
 
 #### Insert
 
