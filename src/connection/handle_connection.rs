@@ -56,23 +56,7 @@ where
             },
         };
 
-        let response = match route_request(request).await {
-            Ok(r) => r,
-            Err(e) => {
-                eprintln!("handling request failed: {}", e);
-                if let Err(e) = send_response(Response {
-                    version: header_data.version,
-                    command: header_data.command,
-                    status_code: StatusCode::InternalServerError, // for now just return 500
-                    content_length: 0,
-                    content: None,
-                }, &mut stream).await {
-                    eprintln!("sending response failed: {}", e);
-                    continue; // skip to wait for next request
-                };
-                continue; // skip to wait for next request
-            }
-        };
+        let response = route_request(request).await;
 
         match send_response(response, &mut stream).await {
             Ok(_) => {}

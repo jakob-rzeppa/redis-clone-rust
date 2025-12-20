@@ -60,7 +60,8 @@ pub(crate) enum StatusCode {
     Ok = 200,
     InvalidRequest = 400,
     NotFound = 404,
-    InternalServerError = 500
+    InternalServerError = 500,
+    NotImplemented = 501,
 }
 
 impl Into<u16> for StatusCode {
