@@ -1,20 +1,22 @@
 use anyhow::Context;
 use tokio::io::{AsyncRead, AsyncReadExt};
 
-pub(super) async fn read_content<S>(stream: &mut S, content_length: usize) -> Result<Vec<u8>, anyhow::Error>
+pub(super) async fn read_content<S>(reader: &mut S, content_length: usize) -> Result<Vec<u8>, anyhow::Error>
 where
     S: AsyncRead + Unpin,
 {
+    // a vector needs to be used since the length of content_length isn't known at compile time
     let mut content = vec![0; content_length];
 
-    stream.read_exact(&mut content).await
+    reader.read_exact(&mut content).await
         .context("content smaller than expected")?;
 
     if content.len() < content_length {
         return Err(anyhow::anyhow!("content smaller than expected"))
     }
 
-    let eot_byte = stream.read_u8().await
+    // check if request is complete
+    let eot_byte = reader.read_u8().await
         .context("read eot character failed")?;
 
     if eot_byte != 0x04 {
