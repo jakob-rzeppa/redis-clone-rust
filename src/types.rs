@@ -36,12 +36,6 @@ pub(crate) enum Command {
     Invalid = 0xFF // the invalid command is given to the router if the command doesn't exist
 }
 
-impl Into<u8> for Command {
-    fn into(self) -> u8 {
-        self as u8
-    }
-}
-
 impl From<u8> for Command {
     fn from(i: u8) -> Self {
         match i {
@@ -61,10 +55,4 @@ pub(crate) enum StatusCode {
     NotFound = 404,
     InternalServerError = 500,
     NotImplemented = 501,
-}
-
-impl Into<u16> for StatusCode {
-    fn into(self) -> u16 {
-        self as u16
-    }
 }
