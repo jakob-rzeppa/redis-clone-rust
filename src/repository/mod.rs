@@ -9,6 +9,12 @@ pub(crate) struct Repository {
 }
 
 impl Repository {
+    pub(crate) fn new() -> Self {
+        Repository {
+            data: HashMap::new(),
+        }
+    }
+
     pub(crate) async fn get(&self, id: u32) -> Option<Vec<u8>> {
         let rw_lock = self.data.get(&id)?;
         let guard = rw_lock.read().await;

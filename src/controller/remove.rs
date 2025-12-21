@@ -1,6 +1,7 @@
+use crate::repository::SharedRepository;
 use crate::types::{Request, Response, StatusCode};
 
-pub(super) async fn handle_remove_request(request: Request) -> Response {
+pub(super) async fn handle_remove_request(request: Request, db: SharedRepository) -> Response {
     Response {
         version: request.version,
         command: request.command,

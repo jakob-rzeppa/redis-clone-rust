@@ -2,9 +2,10 @@ use crate::connection::read_content::read_content;
 use crate::connection::read_header::read_header;
 use crate::connection::send_response::send_response;
 use crate::controller::route_request;
+use crate::repository::SharedRepository;
 use crate::types::{Request};
 
-pub(super) async fn handle_connection<S>(mut stream: S)
+pub(super) async fn handle_connection<S>(mut stream: S, db: SharedRepository)
 where
     S: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin,
 {
@@ -40,7 +41,9 @@ where
             content: if content.is_empty() { None } else { Some(content) },
         };
 
-        let response = route_request(request).await;
+        let local_db = db.clone();
+
+        let response = route_request(request, local_db).await;
 
         match send_response(response, &mut stream).await {
             Ok(_) => {}
