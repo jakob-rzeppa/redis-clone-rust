@@ -2,7 +2,7 @@ use crate::connection::read_content::read_content;
 use crate::connection::read_header::read_header;
 use crate::connection::send_response::send_response;
 use crate::controller::route_request;
-use crate::types::{Command, Request, Response, StatusCode};
+use crate::types::{Request};
 
 pub(super) async fn handle_connection<S>(mut stream: S)
 where
@@ -22,30 +22,22 @@ where
         };
 
         // read content
-        let content: Option<Vec<u8>>;
-        if header_data.command == Command::Set || header_data.command == Command::Insert {
-            content = match read_content(&mut stream, header_data.content_length as usize).await {
-                Ok(v) => Some(v),
-                Err(e) => {
-                    eprintln!("read content failed: {}", e);
-                    // don't return a response and let the client reconnect with a new connection
+        let content = match read_content(&mut stream, header_data.content_length as usize).await {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("read content failed: {}", e);
+                // don't return a response and let the client reconnect with a new connection
 
-                    // break / close connection to make sure that there are no leftover bytes in the stream from this request
-                    break;
-                }
-            };
-        } else {
-            content = None;
-        }
+                // break / close connection to make sure that there are no leftover bytes in the stream from this request
+                break;
+            }
+        };
 
         let request = Request {
             version: header_data.version,
             command: header_data.command,
             content_length: header_data.content_length,
-            content: match content {
-                None => None,
-                Some(v) => Some(v),
-            },
+            content: if content.is_empty() { None } else { Some(content) },
         };
 
         let response = route_request(request).await;

@@ -31,8 +31,7 @@ pub(crate) struct Response {
 pub(crate) enum Command {
     Get = 0,
     Set = 1,
-    Insert = 2,
-    Remove = 3,
+    Remove = 2,
     Invalid = 0xFF // the invalid command is given to the router if the command doesn't exist
 }
 
@@ -41,8 +40,7 @@ impl From<u8> for Command {
         match i {
             0 => Command::Get,
             1 => Command::Set,
-            2 => Command::Insert,
-            3 => Command::Remove,
+            2 => Command::Remove,
             _ => Command::Invalid,
         }
     }
