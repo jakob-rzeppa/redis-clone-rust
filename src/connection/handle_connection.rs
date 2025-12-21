@@ -28,16 +28,8 @@ where
                 Ok(v) => Some(v),
                 Err(e) => {
                     eprintln!("read content failed: {}", e);
-                    if let Err(e) = send_response(Response {
-                        version: header_data.version,
-                        command: header_data.command,
-                        status_code: StatusCode::InvalidRequest,
-                        content_length: 0,
-                        content: None,
-                    }, &mut stream).await {
-                        eprintln!("sending response failed: {}", e);
-                        continue; // skip to wait for next request
-                    };
+                    // don't return a response and let the client reconnect with a new connection
+
                     // break / close connection to make sure that there are no leftover bytes in the stream from this request
                     break;
                 }
