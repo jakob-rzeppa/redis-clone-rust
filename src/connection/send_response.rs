@@ -1,27 +1,28 @@
 use anyhow::Context;
 use tokio::io::{AsyncWriteExt};
 use crate::types::{Response};
+use crate::util::big_endian;
 
 pub(super) async fn send_response<W>(response: Response, mut writer: W) -> Result<(), anyhow::Error>
 where
     W: AsyncWriteExt + Unpin,
 {
-    writer.write_u8(response.version).await
-        .context("failed to send version")?;
-    writer.write_u8(response.command.into()).await
-        .context("failed to send version")?;
-    writer.write_u16(response.status_code.into()).await
-        .context("failed to send status code")?;
-    writer.write_u16(response.content_length).await
-        .context("failed to send content_length")?;
+    let mut msg: Vec<u8> = Vec::with_capacity(6 /* Header */ + response.content_length as usize);
 
-    if let Some(content) = response.content {
-        writer.write_all(&content).await
-            .context("failed to send content")?;
+    msg.push(response.version);
+    msg.push(response.command as u8);
+    msg.append(&mut big_endian::u16_to_vec(&(response.status_code as u16)));
+    msg.append(&mut big_endian::u16_to_vec(&response.content_length));
+
+    if let Some(mut content) = response.content {
+        msg.append(&mut content);
     }
 
-    writer.write_u8(0x04).await
-        .context("failed to send eot character")?;
+    // EOT character
+    msg.push(0x04);
+
+    writer.write_all(&msg).await
+        .context("failed to send response")?;
 
     Ok(())
 }
