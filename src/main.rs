@@ -1,6 +1,7 @@
 mod connection;
 mod controller;
 mod types;
+mod util;
 
 use tokio::net::{TcpListener};
 use crate::connection::listen_for_connections;
