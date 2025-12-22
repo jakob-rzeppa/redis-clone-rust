@@ -61,22 +61,8 @@ pub(super) async fn handle_get_request(request: Request, db: SharedRepository) -
 mod tests {
     use super::*;
     use std::sync::Arc;
-    use mockall::mock;
-    use crate::repository::error::DatabaseError;
-    use crate::repository::RepositoryApi;
+    use crate::repository::MockRepository;
     use crate::types::{Command, Request};
-
-    mock! {
-        Repository {}
-
-        #[async_trait::async_trait]
-        impl RepositoryApi for Repository {
-            async fn get(&self, id: u32) -> Option<Vec<u8>>;
-            async fn set(&self, id: u32, data: Vec<u8>) -> Result<(), DatabaseError>;
-            async fn insert(&self, id: u32, data: Vec<u8>) -> Result<(), DatabaseError>;
-            async fn remove(&self, id: u32) -> Result<(), DatabaseError>;
-        }
-    }
 
     fn make_request(content_length: u16, content: Option<Vec<u8>>) -> Request {
         Request {
