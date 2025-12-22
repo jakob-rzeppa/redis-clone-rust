@@ -22,6 +22,7 @@ fn main() {
     msg.push(0); // get
     msg.append(&mut vec![0,4]); // content_length
     msg.append(&mut vec![0,0,0,1]); // id 1
+    msg.push(4); // eot character
 
     println!("Get request for id 1");
 
