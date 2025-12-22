@@ -2,6 +2,7 @@ pub(crate) mod error;
 
 use std::collections::{HashMap};
 use std::sync::{Arc};
+use mockall::automock;
 use tokio::sync::{RwLock};
 use crate::repository::error::DatabaseError;
 use crate::repository::error::DatabaseError::{AlreadyExists, NotFound, WriteBlocked};
@@ -28,6 +29,7 @@ impl Repository {
     }
 }
 
+#[automock]
 #[async_trait::async_trait]
 impl RepositoryApi for Repository {
     async fn get(&self, id: u32) -> Option<Vec<u8>> {
