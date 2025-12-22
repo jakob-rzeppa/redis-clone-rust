@@ -91,26 +91,34 @@ mod tests {
 
     #[tokio::test]
     async fn invalid_request_when_content_length_not_4() {
-        let db = Arc::new(MockRepository::new());
+        let mut mock = MockRepository::new();
+
+        mock.expect_get().never();
+
+        let mock = Arc::new(mock);
 
         let request = make_request(3, Some(vec![0, 0, 0]));
-        let response = handle_get_request(request, db).await;
+        let response = handle_get_request(request, mock).await;
 
         assert_eq!(response.status_code, StatusCode::InvalidRequest);
     }
 
     #[tokio::test]
     async fn invalid_request_when_content_missing() {
-        let db = Arc::new(MockRepository::new());
+        let mut mock = MockRepository::new();
+
+        mock.expect_get().never();
+
+        let mock = Arc::new(mock);
 
         let request = make_request(4, None);
-        let response = handle_get_request(request, db).await;
+        let response = handle_get_request(request, mock).await;
 
         assert_eq!(response.status_code, StatusCode::InvalidRequest);
     }
 
     #[tokio::test]
-    async fn invalid_request_when_entry_not_found() {
+    async fn not_found_when_entry_missing() {
         let mut mock = MockRepository::new();
 
         mock.expect_get()
@@ -120,7 +128,7 @@ mod tests {
 
         let mock = Arc::new(mock);
 
-        let request = make_request(4, Some(vec![0,0,0,42]));
+        let request = make_request(4, Some(42u32.to_be_bytes().to_vec()));
         let response = handle_get_request(request, mock).await;
 
         assert_eq!(response.status_code, StatusCode::NotFound);
