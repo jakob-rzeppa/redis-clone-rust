@@ -73,7 +73,6 @@ pub(super) async fn handle_remove_request(request: Request, db: SharedRepository
 mod tests {
     use super::*;
     use std::sync::Arc;
-    use crate::controller::set::handle_set_request;
     use crate::repository::MockRepository;
     use crate::types::{Command, Request};
 
