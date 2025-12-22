@@ -6,10 +6,18 @@ use tokio::sync::{RwLock};
 use crate::repository::error::DatabaseError;
 use crate::repository::error::DatabaseError::{AlreadyExists, NotFound, WriteBlocked};
 
-pub(crate) type SharedRepository = Arc<Repository>;
+pub(crate) type SharedRepository = Arc<dyn RepositoryApi>;
 
 pub(crate) struct Repository {
     data: RwLock<HashMap<u32, RwLock<Vec<u8>>>>,
+}
+
+#[async_trait::async_trait]
+pub(crate) trait RepositoryApi: Send + Sync {
+    async fn get(&self, id: u32) -> Option<Vec<u8>>;
+    async fn set(&self, id: u32, data: Vec<u8>) -> Result<(), DatabaseError>;
+    async fn insert(&self, id: u32, data: Vec<u8>) -> Result<(), DatabaseError>;
+    async fn remove(&self, id: u32) -> Result<(), DatabaseError>;
 }
 
 impl Repository {
@@ -18,8 +26,11 @@ impl Repository {
             data: RwLock::new(HashMap::new()),
         }
     }
+}
 
-    pub(crate) async fn get(&self, id: u32) -> Option<Vec<u8>> {
+#[async_trait::async_trait]
+impl RepositoryApi for Repository {
+    async fn get(&self, id: u32) -> Option<Vec<u8>> {
         let hash_map_guard = self.data.read().await;
         let rw_lock = hash_map_guard.get(&id)?;
         let data_guard = rw_lock.read().await;
@@ -27,7 +38,7 @@ impl Repository {
     }
 
     /// Returns a Result with a boolean indicating if a new entry was created (true = created)
-    pub(crate) async fn set(&self, id: u32, mut data: Vec<u8>) -> Result<(), DatabaseError> {
+    async fn set(&self, id: u32, mut data: Vec<u8>) -> Result<(), DatabaseError> {
         let hash_map_guard = self.data.read().await;
 
         let rw_lock = match hash_map_guard.get(&id) {
@@ -45,7 +56,7 @@ impl Repository {
         Ok(())
     }
 
-    pub(crate) async fn insert(&self, id: u32, data: Vec<u8>) -> Result<(), DatabaseError> {
+    async fn insert(&self, id: u32, data: Vec<u8>) -> Result<(), DatabaseError> {
         let mut hash_map_guard = self.data.write().await;
 
         if hash_map_guard.contains_key(&id) {
@@ -57,7 +68,7 @@ impl Repository {
         Ok(())
     }
 
-    pub(crate) async fn remove(&self, id: u32) -> Result<(), DatabaseError> {
+    async fn remove(&self, id: u32) -> Result<(), DatabaseError> {
         let mut hash_map_guard = self.data.write().await;
 
         match hash_map_guard.remove(&id) {
