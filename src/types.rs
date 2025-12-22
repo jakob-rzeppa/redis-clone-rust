@@ -31,7 +31,8 @@ pub(crate) struct Response {
 pub(crate) enum Command {
     Get = 0,
     Set = 1,
-    Remove = 2,
+    Insert = 2,
+    Remove = 3,
     Invalid = 0xFF // the invalid command is given to the router if the command doesn't exist
 }
 
@@ -40,7 +41,8 @@ impl From<u8> for Command {
         match i {
             0 => Command::Get,
             1 => Command::Set,
-            2 => Command::Remove,
+            2 => Command::Insert,
+            3 => Command::Remove,
             _ => Command::Invalid,
         }
     }
@@ -52,7 +54,7 @@ pub(crate) enum StatusCode {
     Ok = 200,
     InvalidRequest = 400,
     NotFound = 404,
+    Conflict = 409, // someone else is currently writing
     InternalServerError = 500,
     NotImplemented = 501,
-    WriteBlocked = 520 // someone else is currently writing
 }
