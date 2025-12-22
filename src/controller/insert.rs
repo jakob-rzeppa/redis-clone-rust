@@ -39,7 +39,7 @@ pub(super) async fn handle_insert_request(request: Request, db: SharedRepository
     let id = u32::from_be_bytes([content[0], content[1], content[2], content[3]]);
 
     // remove the first 4 bytes from the content (id)
-    for i in 0..4 {
+    for _ in 0..4 {
         content.remove(0);
     }
 
