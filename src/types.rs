@@ -54,4 +54,5 @@ pub(crate) enum StatusCode {
     NotFound = 404,
     InternalServerError = 500,
     NotImplemented = 501,
+    WriteBlocked = 520 // someone else is currently writing
 }
