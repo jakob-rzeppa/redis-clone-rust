@@ -1,6 +1,10 @@
+pub(crate) mod error;
+
 use std::collections::{HashMap};
 use std::sync::{Arc};
 use tokio::sync::{RwLock};
+use crate::repository::error::DatabaseError;
+use crate::repository::error::DatabaseError::{AlreadyExists, NotFound, WriteBlocked};
 
 pub(crate) type SharedRepository = Arc<Repository>;
 
@@ -23,17 +27,17 @@ impl Repository {
     }
 
     /// Returns a Result with a boolean indicating if a new entry was created (true = created)
-    pub(crate) async fn set(&self, id: u32, mut data: Vec<u8>) -> Result<(), anyhow::Error> {
+    pub(crate) async fn set(&self, id: u32, mut data: Vec<u8>) -> Result<(), DatabaseError> {
         let hash_map_guard = self.data.read().await;
 
         let rw_lock = match hash_map_guard.get(&id) {
             Some(rw_lock) => rw_lock,
-            None => return Err(anyhow::anyhow!("entry with id {} does not exist", id)),
+            None => return Err(NotFound(id)),
         };
 
         let mut guard = match rw_lock.try_write() {
             Ok(guard) => guard,
-            Err(_) => return Err(anyhow::Error::msg("someone else is currently writing")),
+            Err(_) => return Err(WriteBlocked(id)),
         };
 
         guard.clear();
@@ -41,11 +45,11 @@ impl Repository {
         Ok(())
     }
 
-    pub(crate) async fn insert(&self, id: u32, data: Vec<u8>) -> Result<(), anyhow::Error> {
+    pub(crate) async fn insert(&self, id: u32, data: Vec<u8>) -> Result<(), DatabaseError> {
         let mut hash_map_guard = self.data.write().await;
 
         if hash_map_guard.contains_key(&id) {
-            return Err(anyhow::anyhow!("entry with id {} already exists", id));
+            return Err(AlreadyExists(id));
         }
 
         hash_map_guard.insert(id, RwLock::new(data));
@@ -53,12 +57,12 @@ impl Repository {
         Ok(())
     }
 
-    pub(crate) async fn remove(&self, id: u32) -> Result<(), anyhow::Error> {
+    pub(crate) async fn remove(&self, id: u32) -> Result<(), DatabaseError> {
         let mut hash_map_guard = self.data.write().await;
 
         match hash_map_guard.remove(&id) {
             Some(_) => Ok(()),
-            None => Err(anyhow::Error::msg("not found"))
+            None => Err(NotFound(id))
         }
     }
 }
@@ -96,7 +100,7 @@ mod tests {
 
         let err = db.set(1, b"updated hello".to_vec()).await.unwrap_err();
 
-        assert!(err.to_string().contains("entry with id 1 does not exist"));
+        assert_eq!(err, NotFound(1));
     }
 
     #[tokio::test]
@@ -116,7 +120,7 @@ mod tests {
 
         let err = db.insert(1, b"new hello".to_vec()).await.unwrap_err();
 
-        assert!(err.to_string().contains("entry with id 1 already exists"));
+        assert_eq!(err, AlreadyExists(1));
     }
 
     #[tokio::test]
@@ -138,7 +142,7 @@ mod tests {
 
         let err = db.remove(2).await.unwrap_err();
 
-        assert!(err.to_string().contains("not found"));
+        assert_eq!(err, NotFound(2));
         assert!(db.data.read().await.get(&1).is_some());
     }
 }
