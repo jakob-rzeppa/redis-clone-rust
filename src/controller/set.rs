@@ -9,9 +9,11 @@ use crate::types::{Request, Response, StatusCode};
 /// content (at least 1 byte)
 ///
 /// Responses:
-/// 200 with content as body
+/// 200 ok
 /// 400 invalid request
 /// 404 not found
+/// 409 conflict: returned if someone is currently reading or writing to the same entry
+/// 500 internal server error
 pub(super) async fn handle_set_request(request: Request, db: SharedRepository) -> Response {
     // if no id or content empty (smaller than 1 byte)
     if request.content_length <= 5 {
@@ -65,7 +67,7 @@ pub(super) async fn handle_set_request(request: Request, db: SharedRepository) -
                 DatabaseError::WriteBlocked(_) => Response {
                     version: request.version,
                     command: request.command,
-                    status_code: StatusCode::WriteBlocked,
+                    status_code: StatusCode::Conflict,
                     content_length: 0,
                     content: None,
                 },
@@ -172,7 +174,7 @@ mod tests {
         let request = make_request(42, b"hello".to_vec());
         let response = handle_set_request(request, mock).await;
 
-        assert_eq!(StatusCode::WriteBlocked, response.status_code);
+        assert_eq!(StatusCode::Conflict, response.status_code);
     }
 
     #[tokio::test]

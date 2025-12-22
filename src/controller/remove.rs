@@ -8,9 +8,10 @@ use crate::types::{Request, Response, StatusCode};
 /// 4 bytes u32 id to read
 ///
 /// Responses:
-/// 200
+/// 200 ok
 /// 400 invalid request
 /// 404 not found
+/// 500 internal server error
 pub(super) async fn handle_remove_request(request: Request, db: SharedRepository) -> Response {
     if request.content_length != 4 {
         return Response {
