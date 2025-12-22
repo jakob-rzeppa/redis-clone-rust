@@ -5,7 +5,8 @@ edition = "2024"
 
 [dependencies]
 # Standard error handling libraries
-anyhow = "1.0.100" # For error context and propagation
+anyhow = "1.0.100" # for error context and propagation
+thiserror = "2.0.17" # custom error types
 mockall = "0.14.0" # mocking
 
 tokio = { version = "1", features = ["full"] }
