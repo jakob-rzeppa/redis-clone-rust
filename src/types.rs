@@ -47,6 +47,7 @@ impl From<u8> for Command {
 }
 
 // u16 in request / response
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub(crate) enum StatusCode {
     Ok = 200,
     InvalidRequest = 400,
