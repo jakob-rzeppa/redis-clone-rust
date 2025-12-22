@@ -1,7 +1,6 @@
 use anyhow::Context;
 use tokio::io::{AsyncWriteExt};
 use crate::types::{Response};
-use crate::util::big_endian;
 
 pub(super) async fn send_response<W>(response: Response, mut writer: W) -> Result<(), anyhow::Error>
 where
@@ -11,8 +10,8 @@ where
 
     msg.push(response.version);
     msg.push(response.command as u8);
-    msg.append(&mut big_endian::u16_to_vec(&(response.status_code as u16)));
-    msg.append(&mut big_endian::u16_to_vec(&response.content_length));
+    msg.append(&mut (response.status_code as u16).to_be_bytes().to_vec());
+    msg.append(&mut (response.content_length).to_be_bytes().to_vec());
 
     if let Some(mut content) = response.content {
         msg.append(&mut content);

@@ -1,7 +1,6 @@
 mod connection;
 mod controller;
 mod types;
-mod util;
 mod repository;
 
 use std::sync::Arc;
