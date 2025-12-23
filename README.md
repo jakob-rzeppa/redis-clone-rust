@@ -11,9 +11,9 @@ The intentions behind the project are:
 
 ## Features
 
-- [ ] Connection over tcp, so that https://github.com/jakob-rzeppa/http-server-c can use the database
-- [ ] The cache itself
-- [ ] Persistent data storage (AOF: logs changes -> logs can be replayed: see https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/)
+- [x] Connection over tcp, so that https://github.com/jakob-rzeppa/http-server-c can use the database
+- [x] The cache itself (GET, SET, INSERT, REMOVE)
+- [ ] Persistent data storage (AOF (Append Only File): log changes -> logs can be replayed: see https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/)
 - [ ] (isn't really a feature) application tests
 
 ## Planning
@@ -21,7 +21,8 @@ The intentions behind the project are:
 ### Architecture
 
 - A connection spawns a tokio task
-- One writer / multiple readers -> the value that shall be updated can't be read during the operation, but other values are able to be read while a different value is updated
+- Read / write locked individual entries, so multiple values can be read / written to at the same time.
+- The full cache shall only be locked if an entry is being removed or inserted
 
 ### Requests
 
@@ -31,20 +32,20 @@ The intentions behind the project are:
 - content of specified length
 - EOT (End of Transmission) ASCII control character 00000100 (4)
 
-#### GET
+#### GET content
 
 - u32 id
 
-#### SET
+#### SET content
 
 - u32 id
-- content
+- data
 
-#### INSERT
+#### INSERT content
 
-- content
+- data
 
-#### REMOVE
+#### REMOVE content
 
 - u32 id
 
@@ -59,10 +60,10 @@ the same metadata as the request
 - content of specified length
 - EOT (End of Transmission) ASCII control character 00000100 (4)
 
-#### Insert
+#### Insert content
 
 - u32 id
 
-#### Get
+#### Get content
 
 - content
