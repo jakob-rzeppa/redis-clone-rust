@@ -12,6 +12,9 @@ pub struct Response {
 }
 
 fn main() {
+    let string_id = std::env::args().nth(1).expect("no id given");
+    let id = string_id.parse::<u32>().expect("failed to parse id");
+
     let mut stream = TcpStream::connect("127.0.0.1:6379").expect("connect failed");
 
     println!("Successfully connected to server on port 6379");
@@ -23,7 +26,7 @@ fn main() {
     msg.extend_from_slice(9u16.to_be_bytes().as_slice()); // content_length
 
     // content
-    msg.extend_from_slice(1u32.to_be_bytes().as_slice()); // id 1
+    msg.extend_from_slice(id.to_be_bytes().as_slice()); // id
     msg.extend_from_slice(b"hello");
 
     msg.push(EOT); // eot character
