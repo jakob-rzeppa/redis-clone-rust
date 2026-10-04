@@ -4,10 +4,7 @@ A simple redis like key-value store based on https://tokio.rs/tokio/tutorial.
 
 ---
 
-The intentions behind the project are:
-
-- learning the rust basics (first rust project)
-- creating a database for https://github.com/jakob-rzeppa/http-server-c, to later implement multiple instances of the http-server and load balancing (probably also written in rust)
+The intention behind the project is learning the rust basics (first rust project).
 
 ## Features
 
